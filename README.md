@@ -7,6 +7,8 @@ A single-page React app for writing [D2](https://d2lang.com) diagrams with a cur
 
 Sibling project: `scw-mermaid` does the same thing for Mermaid `architecture-beta` diagrams.
 
+![Screenshot of the Scaleway D2 Diagram Editor showing the source editor on the left and a rendered 3-tier web app diagram with Scaleway icons on the right](.github/screenshot.png)
+
 ## Features
 
 - D2 source editor (left, CodeMirror with syntax highlighting) with a live-rendered preview (right)
