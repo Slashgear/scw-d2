@@ -1,14 +1,19 @@
 #!/usr/bin/env bun
 /**
- * Generates public/icons/scw/*.svg and src/assets/scw-icons-manifest.json, a
- * curated subset of @ultraviolet/icons (Scaleway's design system), for use as
- * D2 `icon:` references in architecture diagrams.
+ * Generates public/icons/scw/*.svg and src/assets/scw-icons-manifest.json
+ * from every @ultraviolet/icons ProductIcon/CategoryIcon (Scaleway's design
+ * system), for use as D2 `icon:` references in architecture diagrams.
  *
  * Unlike mermaid (which has an iconify pack registry), D2's `icon:` field is
  * just a URL to an SVG/PNG. So instead of one repackaged iconify JSON, this
- * renders each curated @ultraviolet/icons component to a standalone static
- * SVG file under public/ (served as-is, referenced by path at runtime), and
- * writes a small manifest of the available names.
+ * renders each component to a standalone static SVG file under public/
+ * (served as-is, referenced by path at runtime), and writes a small manifest
+ * of the available names.
+ *
+ * The icon set is discovered from the package's public barrel exports
+ * (`@ultraviolet/icons/product` / `/category`) rather than a hand-typed map,
+ * so newly added Scaleway product icons show up automatically instead of
+ * silently being unavailable until someone remembers to add an entry.
  *
  * @ultraviolet/icons ships React components, not raw SVG files, so we render
  * each one to static markup with react-dom/server.
@@ -20,75 +25,94 @@ import { dirname, resolve } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-// Curated subset of Scaleway ProductIcon components (64x64 viewBox) relevant
-// to cloud architecture diagrams. Key = D2 icon name (scw:<key>), value = the
-// component export name under @ultraviolet/icons/product/<name>.
-const PRODUCT_ICONS: Record<string, string> = {
-  instance: "InstanceProductIcon",
-  "instance-gpu": "InstanceGpuProductIcon",
-  "elastic-metal": "ElasticMetalProductIcon",
-  containers: "ContainersProductIcon",
-  functions: "FunctionsProductIcon",
-  "serverless-jobs": "ServerlessJobsProductIcon",
-  kubernetes: "KubernetesProductIcon",
-  registry: "RegistryProductIcon",
-  "artifact-registry": "ArtifactRegistryProductIcon",
-  rdb: "RdbProductIcon",
-  redis: "RedisProductIcon",
-  "serverless-db": "ServerlessDbProductIcon",
-  "managed-search-database": "ManagedSearchDatabaseProductIcon",
-  "managed-kafka": "ManagedKafkaProductIcon",
-  queueing: "QueueingProductIcon",
-  nats: "NatsProductIcon",
-  "object-storage": "ObjectStorageProductIcon",
-  "block-storage": "BlockStorageProductIcon",
-  "file-storage": "FileStorageProductIcon",
-  "cold-storage": "ColdStorageProductIcon",
-  snapshots: "SnapshotsProductIcon",
-  vpc: "VpcProductIcon",
-  "vpc-peering": "VpcPeeringProductIcon",
-  "private-network": "PrivateNetworkProductIcon",
-  "hub-networks": "HubNetworksProductIcon",
-  "public-gateway": "PublicGatewayProductIcon",
-  "vpn-customer-gateway": "VpnCustomerGatewayProductIcon",
-  "network-acls": "NetworkAclsProductIcon",
-  lb: "LbProductIcon",
-  "api-gateway": "ApiGatewayProductIcon",
-  "edge-services": "EdgeServicesProductIcon",
-  cdn: "CdnProductIcon",
-  domains: "DomainsProductIcon",
-  dns: "DnsProductIcon",
-  "ssl-certificates": "SslCertificatesProductIcon",
-  "secret-manager": "SecretManagerProductIcon",
-  iam: "IamProductIcon",
-  vpn: "VpnProductIcon",
-  "transactional-email": "TransactionalEmailProductIcon",
-  mailbox: "MailboxProductIcon",
-  cockpit: "CockpitProductIcon",
-  iot: "IotProductIcon",
-  "iot-edge": "IotEdgeProductIcon",
-  webhosting: "WebhostingProductIcon",
-  dedibox: "DedibackupProductIcon",
-};
+// Not real infra/product icons — internal codenames, or icon-of-an-icon /
+// programming-language logos that don't belong in an architecture diagram.
+const PRODUCT_EXCLUDE = new Set([
+  "JeroProductIcon",
+  "NabuProductIcon",
+  "CbProductIcon",
+  "IconElasticMetalProductIcon",
+  "IconSdkProductIcon",
+  "IconSdkJsProductIcon",
+  "SdkGoProductIcon",
+  "SdkPythonProductIcon",
+  "TrycatchProductIcon",
+]);
 
-// Curated CategoryIcon components (20x20 viewBox) — useful for container/group icons.
-const CATEGORY_ICONS: Record<string, string> = {
-  "cat-compute": "ComputeCategoryIcon",
-  "cat-containers": "ContainersCategoryIcon",
-  "cat-serverless-compute": "ServerlessComputeCategoryIcon",
-  "cat-database": "DatabaseCategoryIcon",
-  "cat-storage": "StorageCategoryIcon",
-  "cat-network": "NetworkCategoryIcon",
-  "cat-vpc": "VpcCategoryIcon",
-  "cat-security": "SecurityCategoryIcon",
-  "cat-key-manager": "KeyManagerCategoryIcon",
-  "cat-monitoring": "MonitoringCategoryIcon",
-  "cat-data-and-analytics": "DataAndAnalyticsCategoryIcon",
-  "cat-ai": "AiCategoryIcon",
-  "cat-baremetal": "BaremetalCategoryIcon",
-  "cat-domains-and-web-hosting": "DomainsAndWebHostingCategoryIcon",
-  "cat-integration-services": "IntegrationServicesCategoryIcon",
-};
+// Scaleway Console navigation categories (billing, docs, profile, ...), not
+// architecture-diagram concepts.
+const CATEGORY_EXCLUDE = new Set([
+  "BusinessDetailsCategoryIcon",
+  "BillingCategoryIcon",
+  "DevToolsCategoryIcon",
+  "DocumentationCategoryIcon",
+  "InteractiveDemosCategoryIcon",
+  "LabsCategoryIcon",
+  "OrganizationDashboardCategoryIcon",
+  "OrganizationNotificationsCategoryIcon",
+  "PartnersCategoryIcon",
+  "PinCategoryIcon",
+  "PrivacyCategoryIcon",
+  "ProfileCategoryIcon",
+  "ProfileNotificationsCategoryIcon",
+  "UseCaseCategoryIcon",
+  "UseCasesCategoryIcon",
+]);
+
+/** PascalCase export name -> kebab-case D2 icon name, e.g. "SslCertificates" -> "ssl-certificates". */
+function toKebabCase(name: string): string {
+  return name
+    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1-$2")
+    .toLowerCase();
+}
+
+/**
+ * @ultraviolet/icons' two-tone product icons hardcode their fill colors per
+ * path, and — evidently from a couple of design-system revisions over time —
+ * not all icons agree on the exact purple. Most use a light "fillWeak"
+ * background with dark/mid-purple line art, but a handful (artifact-registry,
+ * file-storage, vpn, vpn-customer-gateway, ...) instead use a *dark*
+ * "fillWeak" background with a white glyph — a legitimately different
+ * "inverted badge" style within Ultraviolet itself, not a bug in this script,
+ * but jarring when it sits next to every other icon in the same diagram.
+ *
+ * Normalize every icon to one canonical light/mid/dark triad, keyed off the
+ * `fillWeak` class Ultraviolet already annotates its background shape with
+ * (rather than the specific hex, which varies) — this fixes both the
+ * near-duplicate purple drift AND the inverted-badge icons in one pass, and
+ * keeps working for icons added in the future. Any fill color outside the
+ * known set (e.g. a third-party brand logo icon) is left untouched, so those
+ * keep their authentic colors.
+ */
+const CANONICAL = { light: "#f1eefc", mid: "#a060f6", dark: "#521094" };
+const DARK_HEXES = new Set(["#4f0599", "#521094"]);
+const MID_HEXES = new Set(["#a365f6", "#a060f6", "#bf95f9"]);
+const LIGHT_HEXES = new Set(["#eef", "#f1eefc"]);
+
+function recolor(svgMarkup: string): string {
+  // fillWeak (and the fill color) is sometimes set on a wrapping <g> that
+  // child <path>s inherit from, rather than on each path directly.
+  return svgMarkup.replace(/<(?:path|rect|circle|polygon|g)\b[^>]*\/?>/g, (tag) => {
+    const fillMatch = tag.match(/fill="([^"]*)"/);
+    if (!fillMatch) return tag;
+    const fill = fillMatch[1].toLowerCase();
+    if (fill === "none" || fill === "currentcolor") return tag;
+
+    const classMatch = tag.match(/class="([^"]*)"/);
+    const isWeak = classMatch?.[1].includes("fillWeak") ?? false;
+
+    let next: string;
+    if (isWeak) next = CANONICAL.light;
+    else if (fill === "#fff" || fill === "#ffffff") next = CANONICAL.dark;
+    else if (DARK_HEXES.has(fill)) next = CANONICAL.dark;
+    else if (MID_HEXES.has(fill)) next = CANONICAL.mid;
+    else if (LIGHT_HEXES.has(fill)) next = CANONICAL.light;
+    else return tag; // unrecognized color (e.g. a brand logo) — leave as-is
+
+    return tag.replace(/fill="[^"]*"/, `fill="${next}"`);
+  });
+}
 
 function extractSvg(svgMarkup: string): string {
   // Strip the <title> element mermaid/D2 don't need in the icon body, keep
@@ -97,9 +121,19 @@ function extractSvg(svgMarkup: string): string {
   // omits the xmlns attribute (it's implicit when inlined in an HTML
   // document), but a standalone .svg file loaded via D2's `icon:` needs it
   // declared or browsers refuse to render it as an image at all.
-  return svgMarkup
-    .replace(/<title>.*?<\/title>/s, "")
-    .replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" ');
+  return recolor(
+    svgMarkup
+      .replace(/<title>.*?<\/title>/s, "")
+      .replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" '),
+  );
+}
+
+async function discover(subpath: "product" | "category", exclude: Set<string>): Promise<string[]> {
+  const mod: Record<string, unknown> = await import(`@ultraviolet/icons/${subpath}`);
+  const suffix = subpath === "product" ? "ProductIcon" : "CategoryIcon";
+  return Object.keys(mod)
+    .filter((name) => name.endsWith(suffix) && !exclude.has(name))
+    .sort();
 }
 
 async function renderIcon(subpath: string, exportName: string): Promise<string> {
@@ -117,28 +151,34 @@ async function main() {
   await rm(outDir, { recursive: true, force: true });
   await mkdir(outDir, { recursive: true });
 
+  const productNames = await discover("product", PRODUCT_EXCLUDE);
+  const categoryNames = await discover("category", CATEGORY_EXCLUDE);
+
   const names: string[] = [];
   const errors: string[] = [];
+  const seen = new Map<string, string>();
 
-  for (const [iconName, exportName] of Object.entries(PRODUCT_ICONS)) {
-    try {
-      const svg = await renderIcon("product", exportName);
-      await writeFile(resolve(outDir, `${iconName}.svg`), svg);
-      names.push(iconName);
-    } catch (err) {
-      errors.push(`product/${exportName}: ${(err as Error).message}`);
+  async function renderAll(exportNames: string[], subpath: "product" | "category", suffix: string, prefix: string) {
+    for (const exportName of exportNames) {
+      const iconName = `${prefix}${toKebabCase(exportName.slice(0, -suffix.length))}`;
+      const existing = seen.get(iconName);
+      if (existing) {
+        errors.push(`${iconName}: collides with ${existing} (from ${exportName})`);
+        continue;
+      }
+      try {
+        const svg = await renderIcon(subpath, exportName);
+        await writeFile(resolve(outDir, `${iconName}.svg`), svg);
+        seen.set(iconName, exportName);
+        names.push(iconName);
+      } catch (err) {
+        errors.push(`${subpath}/${exportName}: ${(err as Error).message}`);
+      }
     }
   }
 
-  for (const [iconName, exportName] of Object.entries(CATEGORY_ICONS)) {
-    try {
-      const svg = await renderIcon("category", exportName);
-      await writeFile(resolve(outDir, `${iconName}.svg`), svg);
-      names.push(iconName);
-    } catch (err) {
-      errors.push(`category/${exportName}: ${(err as Error).message}`);
-    }
-  }
+  await renderAll(productNames, "product", "ProductIcon", "");
+  await renderAll(categoryNames, "category", "CategoryIcon", "cat-");
 
   if (errors.length > 0) {
     console.error(`\nFailed to render ${errors.length} icon(s):`);
