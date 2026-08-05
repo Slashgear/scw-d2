@@ -107,6 +107,12 @@ function App() {
             {theme === 'dark' ? 'Light mode' : 'Dark mode'}
           </button>
           <a
+            href="./privacy-policy.html"
+            className="rounded-md border border-slate-300 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+          >
+            Privacy
+          </a>
+          <a
             href="https://github.com/Slashgear/scw-d2"
             target="_blank"
             rel="noopener noreferrer"
