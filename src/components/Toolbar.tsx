@@ -4,7 +4,7 @@ import { exportPng, exportSvg } from '../lib/export'
 import { buildShareUrl } from '../lib/share'
 import type { Theme } from '../lib/theme'
 
-export type ToolbarPanel = 'layout' | 'icons' | null
+export type ToolbarPanel = 'layout' | 'icons' | 'cheatsheet' | null
 
 interface ToolbarProps {
   code: string
@@ -12,7 +12,7 @@ interface ToolbarProps {
   theme: Theme
   config: D2Config
   activePanel: ToolbarPanel
-  onTogglePanel: (panel: 'layout' | 'icons') => void
+  onTogglePanel: (panel: 'layout' | 'icons' | 'cheatsheet') => void
 }
 
 type Feedback = { label: string; key: number } | null
@@ -54,6 +54,11 @@ export function Toolbar({ code, svg, theme, config, activePanel, onTogglePanel }
       <ToolbarButton onClick={handleExportSvg} label="Export SVG" disabled={!svg} />
       <ToolbarButton onClick={handleExportPng} label="Export PNG" disabled={!svg} />
       <ToolbarButton onClick={() => onTogglePanel('icons')} label="Icons" active={activePanel === 'icons'} />
+      <ToolbarButton
+        onClick={() => onTogglePanel('cheatsheet')}
+        label="Cheatsheet"
+        active={activePanel === 'cheatsheet'}
+      />
       <ToolbarButton onClick={() => onTogglePanel('layout')} label="Layout" active={activePanel === 'layout'} />
       <a
         href="https://d2lang.com/tour/intro"

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Cheatsheet } from './components/Cheatsheet'
 import { D2Settings } from './components/D2Settings'
 import { Editor } from './components/Editor'
 import { IconBrowser } from './components/IconBrowser'
@@ -333,6 +334,7 @@ function App() {
             <D2Settings config={config} onChange={setConfig} onClose={() => setActivePanel(null)} />
           )}
           {activePanel === 'icons' && <IconBrowser onClose={() => setActivePanel(null)} />}
+          {activePanel === 'cheatsheet' && <Cheatsheet onClose={() => setActivePanel(null)} />}
           <Toolbar
             code={code}
             svg={svg}
