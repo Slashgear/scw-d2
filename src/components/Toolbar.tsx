@@ -3,7 +3,6 @@ import type { D2Config } from '../lib/d2Config'
 import { exportPng, exportSvg } from '../lib/export'
 import { buildShareUrl } from '../lib/share'
 import type { Theme } from '../lib/theme'
-import { ExamplesMenu } from './ExamplesMenu'
 
 export type ToolbarPanel = 'layout' | 'icons' | null
 
@@ -14,20 +13,11 @@ interface ToolbarProps {
   config: D2Config
   activePanel: ToolbarPanel
   onTogglePanel: (panel: 'layout' | 'icons') => void
-  onLoadExample: (code: string) => void
 }
 
 type Feedback = { label: string; key: number } | null
 
-export function Toolbar({
-  code,
-  svg,
-  theme,
-  config,
-  activePanel,
-  onTogglePanel,
-  onLoadExample,
-}: ToolbarProps) {
+export function Toolbar({ code, svg, theme, config, activePanel, onTogglePanel }: ToolbarProps) {
   const [feedback, setFeedback] = useState<Feedback>(null)
 
   function flash(label: string) {
@@ -59,8 +49,6 @@ export function Toolbar({
 
   return (
     <div className="flex flex-wrap items-center gap-2 border-t border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-900">
-      <ExamplesMenu onSelect={onLoadExample} />
-      <div className="h-6 w-px shrink-0 bg-slate-300 dark:bg-slate-700" />
       <ToolbarButton onClick={handleCopyCode} label="Copy code" />
       <ToolbarButton onClick={handleCopyShareLink} label="Share" />
       <ToolbarButton onClick={handleExportSvg} label="Export SVG" disabled={!svg} />

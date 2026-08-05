@@ -7,6 +7,7 @@ const THEME_PARAM = 'theme'
 const DIAGRAM_THEME_PARAM = 'dtheme'
 const LAYOUT_PARAM = 'layout'
 const SKETCH_PARAM = 'sketch'
+const DOC_PARAM = 'doc'
 
 export interface DiagramState {
   code: string | null
@@ -49,9 +50,21 @@ function buildParams(code: string, theme: Theme, config: D2Config): URLSearchPar
   return params
 }
 
-/** Replaces the current URL's query params without adding a history entry. */
-export function writeStateToUrl(code: string, theme: Theme, config: D2Config) {
-  const params = buildParams(code, theme, config)
+/** The currently open document's id, e.g. from a bookmarked `?doc=<id>` URL. */
+export function readDocIdFromUrl(): string | null {
+  return new URLSearchParams(window.location.search).get(DOC_PARAM)
+}
+
+/**
+ * Replaces the URL with `?doc=<id>` (no history entry) — the active document
+ * is persisted in IndexedDB, the URL just needs to remember *which one* for
+ * reload/bookmarking. This also clears any incoming `code=...` share-link
+ * params once they've been imported, so refreshing a shared link doesn't
+ * re-trigger the import and create a duplicate document.
+ */
+export function writeDocIdToUrl(id: string) {
+  const params = new URLSearchParams()
+  params.set(DOC_PARAM, id)
   const url = `${window.location.pathname}?${params.toString()}${window.location.hash}`
   window.history.replaceState(null, '', url)
 }

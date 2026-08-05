@@ -1,4 +1,37 @@
+import type { D2Document } from './documents'
 import { inlineIcons } from './inlineIcons'
+
+function slug(name: string): string {
+  const s = name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  return s || 'untitled'
+}
+
+function downloadJson(data: unknown, filename: string) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+  downloadBlob(blob, filename)
+}
+
+export function exportDocument(doc: D2Document) {
+  downloadJson(
+    { kind: 'document', version: 1, name: doc.name, code: doc.code, config: doc.config },
+    `${slug(doc.name)}.d2.json`,
+  )
+}
+
+export function exportLibrary(docs: D2Document[]) {
+  downloadJson(
+    {
+      kind: 'library',
+      version: 1,
+      documents: docs.map((d) => ({ name: d.name, code: d.code, config: d.config })),
+    },
+    'scw-d2-library.json',
+  )
+}
 
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob)

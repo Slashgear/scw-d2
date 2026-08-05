@@ -3,26 +3,49 @@ import { D2Settings } from './components/D2Settings'
 import { Editor } from './components/Editor'
 import { IconBrowser } from './components/IconBrowser'
 import { Preview } from './components/Preview'
+import { Sidebar } from './components/Sidebar'
 import { Toolbar, type ToolbarPanel } from './components/Toolbar'
-import { buildConfigPrelude, type D2Config } from './lib/d2Config'
+import { buildConfigPrelude, DEFAULT_D2_CONFIG, type D2Config } from './lib/d2Config'
 import { D2_BUILTIN_THEMES } from './lib/d2Themes'
+import {
+  createDocument,
+  deleteDocument,
+  duplicateDocument,
+  getAllDocuments,
+  getLastOpenDocId,
+  parseImportedFile,
+  putDocument,
+  setLastOpenDocId,
+  type D2Document,
+} from './lib/documents'
 import { EXAMPLES } from './lib/examples'
+import { exportDocument, exportLibrary } from './lib/export'
 import { renderD2 } from './lib/renderD2'
-import { readStateFromUrl, writeStateToUrl } from './lib/share'
+import { readDocIdFromUrl, readStateFromUrl, writeDocIdToUrl } from './lib/share'
 import { useTheme } from './lib/theme'
 import { useDebouncedValue } from './lib/useDebouncedValue'
 
 const initialUrlState = readStateFromUrl()
+const SIDEBAR_OPEN_KEY = 'scw-d2:sidebar-open'
 
 function App() {
   const { theme, toggleTheme, setTheme } = useTheme()
-  const [code, setCode] = useState(initialUrlState.code ?? EXAMPLES[0].code)
-  const [config, setConfig] = useState<D2Config>(initialUrlState.config)
+  const [documents, setDocuments] = useState<D2Document[]>([])
+  const [currentDocId, setCurrentDocId] = useState<string | null>(null)
+  const [ready, setReady] = useState(false)
+  const [code, setCode] = useState('')
+  const [config, setConfig] = useState<D2Config>(DEFAULT_D2_CONFIG)
   const [activePanel, setActivePanel] = useState<ToolbarPanel>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(() => localStorage.getItem(SIDEBAR_OPEN_KEY) === '1')
   const [svg, setSvg] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const debouncedCode = useDebouncedValue(code, 300)
   const appliedUrlTheme = useRef(false)
+  const documentsRef = useRef<D2Document[]>([])
+
+  useEffect(() => {
+    documentsRef.current = documents
+  }, [documents])
 
   // Apply a theme carried in the share URL exactly once, on first load.
   useEffect(() => {
@@ -32,6 +55,68 @@ function App() {
   }, [setTheme])
 
   useEffect(() => {
+    localStorage.setItem(SIDEBAR_OPEN_KEY, sidebarOpen ? '1' : '0')
+  }, [sidebarOpen])
+
+  function openDocument(doc: D2Document) {
+    setCurrentDocId(doc.id)
+    setCode(doc.code)
+    setConfig(doc.config)
+    setActivePanel(null)
+  }
+
+  // Load the document library once on mount, then figure out which document
+  // should be active: a bookmarked `?doc=<id>`, an incoming `?code=...` share
+  // link (imported as a new document), the last-opened document, the most
+  // recently updated one, or — on a first-ever visit — a seeded default.
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const docs = await getAllDocuments()
+      if (cancelled) return
+
+      let activeDocs = docs
+      let active: D2Document
+
+      const urlDocId = readDocIdFromUrl()
+      const fromUrl = urlDocId ? docs.find((d) => d.id === urlDocId) : undefined
+
+      if (fromUrl) {
+        active = fromUrl
+      } else if (initialUrlState.code) {
+        active = createDocument('Shared diagram', initialUrlState.code, initialUrlState.config)
+        await putDocument(active)
+        activeDocs = [...docs, active]
+      } else {
+        const lastId = getLastOpenDocId()
+        const lastDoc = lastId ? docs.find((d) => d.id === lastId) : undefined
+        if (lastDoc) {
+          active = lastDoc
+        } else if (docs.length > 0) {
+          active = [...docs].sort((a, b) => b.updatedAt - a.updatedAt)[0]
+        } else {
+          active = createDocument('Untitled diagram', EXAMPLES[0].code)
+          await putDocument(active)
+          activeDocs = [active]
+        }
+      }
+
+      if (cancelled) return
+      setDocuments(activeDocs)
+      setCurrentDocId(active.id)
+      setCode(active.code)
+      setConfig(active.config)
+      setLastOpenDocId(active.id)
+      writeDocIdToUrl(active.id)
+      setReady(true)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!ready) return
     let cancelled = false
     // Diagram settings (theme, layout engine, sketch mode) are app state, not
     // part of `code` — they're prepended only for compilation, so the editor
@@ -50,11 +135,100 @@ function App() {
     return () => {
       cancelled = true
     }
-  }, [debouncedCode, config, theme])
+  }, [ready, debouncedCode, config, theme])
+
+  // Autosave: IndexedDB is the source of truth now, so every debounced edit
+  // (code or settings) is persisted against the currently open document.
+  useEffect(() => {
+    if (!ready || !currentDocId) return
+    const current = documentsRef.current.find((d) => d.id === currentDocId)
+    if (!current) return
+    const updated: D2Document = { ...current, code: debouncedCode, config, updatedAt: Date.now() }
+    putDocument(updated)
+    setDocuments((prev) => prev.map((d) => (d.id === updated.id ? updated : d)))
+  }, [ready, debouncedCode, config, currentDocId])
 
   useEffect(() => {
-    writeStateToUrl(debouncedCode, theme, config)
-  }, [debouncedCode, theme, config])
+    if (!ready || !currentDocId) return
+    setLastOpenDocId(currentDocId)
+    writeDocIdToUrl(currentDocId)
+  }, [ready, currentDocId])
+
+  function handleSelectDocument(id: string) {
+    const doc = documents.find((d) => d.id === id)
+    if (doc) openDocument(doc)
+  }
+
+  function handleCreateDocument() {
+    const doc = createDocument('Untitled diagram', '')
+    putDocument(doc)
+    setDocuments((prev) => [...prev, doc])
+    openDocument(doc)
+  }
+
+  function handleLoadExample(exampleCode: string) {
+    const doc = createDocument('Untitled diagram', exampleCode)
+    putDocument(doc)
+    setDocuments((prev) => [...prev, doc])
+    openDocument(doc)
+  }
+
+  function handleDuplicateDocument(id: string) {
+    const doc = documents.find((d) => d.id === id)
+    if (!doc) return
+    const copy = duplicateDocument(doc)
+    putDocument(copy)
+    setDocuments((prev) => [...prev, copy])
+    openDocument(copy)
+  }
+
+  function handleRenameDocument(id: string, name: string) {
+    const doc = documents.find((d) => d.id === id)
+    if (!doc) return
+    const updated = { ...doc, name, updatedAt: Date.now() }
+    putDocument(updated)
+    setDocuments((prev) => prev.map((d) => (d.id === id ? updated : d)))
+  }
+
+  function handleDeleteDocument(id: string) {
+    const remaining = documents.filter((d) => d.id !== id)
+    deleteDocument(id)
+
+    if (remaining.length === 0) {
+      const seeded = createDocument('Untitled diagram', EXAMPLES[0].code)
+      putDocument(seeded)
+      setDocuments([seeded])
+      openDocument(seeded)
+      return
+    }
+
+    setDocuments(remaining)
+    if (id === currentDocId) {
+      const fallback = [...remaining].sort((a, b) => b.updatedAt - a.updatedAt)[0]
+      openDocument(fallback)
+    }
+  }
+
+  async function handleImportFile(file: File) {
+    try {
+      const imported = await parseImportedFile(file)
+      await Promise.all(imported.map(putDocument))
+      setDocuments((prev) => [...prev, ...imported])
+      const last = imported.at(-1)
+      if (last) openDocument(last)
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : 'Failed to import file')
+    }
+  }
+
+  function handleExportOneDocument(id: string) {
+    const doc = documents.find((d) => d.id === id)
+    if (doc) exportDocument(doc)
+  }
+
+  function handleExportAllDocuments() {
+    exportLibrary(documents)
+  }
 
   return (
     <div className="flex h-screen w-screen flex-col bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
@@ -127,7 +301,25 @@ function App() {
       </header>
 
       <main id="main" tabIndex={-1} className="flex min-h-0 flex-1">
-        <div className="flex min-h-0 w-1/2 flex-col border-r border-slate-200 dark:border-slate-800">
+        {currentDocId && (
+          <Sidebar
+            open={sidebarOpen}
+            onToggleOpen={() => setSidebarOpen((prev) => !prev)}
+            documents={documents}
+            currentDocId={currentDocId}
+            onSelectDocument={handleSelectDocument}
+            onCreateDocument={handleCreateDocument}
+            onDuplicateDocument={handleDuplicateDocument}
+            onRenameDocument={handleRenameDocument}
+            onDeleteDocument={handleDeleteDocument}
+            onImportFile={handleImportFile}
+            onExportDocument={handleExportOneDocument}
+            onExportAllDocuments={handleExportAllDocuments}
+            onLoadExample={handleLoadExample}
+          />
+        )}
+
+        <div className="flex min-h-0 flex-1 flex-col border-r border-slate-200 dark:border-slate-800">
           <div className="min-h-0 flex-1 overflow-hidden">
             <Editor value={code} onChange={setCode} />
           </div>
@@ -142,11 +334,10 @@ function App() {
             config={config}
             activePanel={activePanel}
             onTogglePanel={(panel) => setActivePanel((prev) => (prev === panel ? null : panel))}
-            onLoadExample={setCode}
           />
         </div>
 
-        <div className="min-h-0 w-1/2">
+        <div className="min-h-0 flex-1">
           <Preview svg={svg} error={error} />
         </div>
       </main>
