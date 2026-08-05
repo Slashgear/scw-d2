@@ -13,6 +13,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         privacyPolicy: resolve(__dirname, 'privacy-policy.html'),
+        aiAssistant: resolve(__dirname, 'ai-assistant.html'),
       },
     },
   },
