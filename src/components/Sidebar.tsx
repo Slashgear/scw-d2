@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import type { D2Document } from '../lib/documents'
 import { EXAMPLES } from '../lib/examples'
+import { ConfirmDialog } from './ConfirmDialog'
 
 interface SidebarProps {
   open: boolean
@@ -54,7 +55,12 @@ export function Sidebar({
 }: SidebarProps) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draftName, setDraftName] = useState('')
+  const [docPendingDelete, setDocPendingDelete] = useState<D2Document | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Everything outside an open <dialog> is inert, so the id to restore focus
+  // to (read once the dialog's native 'close' event fires — see ConfirmDialog's
+  // onClosed) can't be read off state that's already been cleared by then.
+  const deleteDialogReturnFocusId = useRef<string | null>(null)
 
   if (!open) {
     return (
@@ -92,10 +98,24 @@ export function Sidebar({
     e.target.value = ''
   }
 
-  function handleDelete(doc: D2Document) {
-    if (window.confirm(`Delete "${doc.name}"? This can't be undone.`)) {
-      onDeleteDocument(doc.id)
-    }
+  function confirmDelete() {
+    if (docPendingDelete) onDeleteDocument(docPendingDelete.id)
+    setDocPendingDelete(null)
+  }
+
+  function cancelDelete() {
+    setDocPendingDelete(null)
+  }
+
+  function handleDeleteDialogClosed() {
+    // The dialog's own focus-restoration tries to refocus the delete button
+    // that opened it — but that button only exists in the a11y tree while its
+    // row is hovered/focus-within (see the group-focus-within row actions
+    // above), so by the time the dialog closes it's gone and focus falls back
+    // to <body>. Send it to the row's always-visible select button instead
+    // (a no-op if the doc was actually deleted — that button is gone too).
+    const id = deleteDialogReturnFocusId.current
+    if (id) document.querySelector<HTMLButtonElement>(`[data-doc-id="${id}"]`)?.focus()
   }
 
   return (
@@ -172,6 +192,7 @@ export function Sidebar({
               ) : (
                 <button
                   type="button"
+                  data-doc-id={doc.id}
                   onClick={() => onSelectDocument(doc.id)}
                   onDoubleClick={() => startRename(doc)}
                   className={`min-w-0 flex-1 truncate text-left text-xs ${
@@ -214,7 +235,10 @@ export function Sidebar({
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleDelete(doc)}
+                  onClick={() => {
+                    deleteDialogReturnFocusId.current = doc.id
+                    setDocPendingDelete(doc)
+                  }}
                   aria-label={`Delete ${doc.name}`}
                   title="Delete"
                   className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[11px] text-slate-500 hover:bg-slate-200 hover:text-red-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-red-400"
@@ -248,6 +272,17 @@ export function Sidebar({
           ))}
         </ul>
       </div>
+
+      <ConfirmDialog
+        open={docPendingDelete !== null}
+        title="Delete diagram?"
+        description={`Delete "${docPendingDelete?.name}"? This can't be undone.`}
+        confirmLabel="Delete"
+        destructive
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+        onClosed={handleDeleteDialogClosed}
+      />
     </div>
   )
 }

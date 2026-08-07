@@ -1,7 +1,7 @@
-import { useState } from 'react'
 import type { D2Config } from '../lib/d2Config'
 import { exportPng, exportSvg } from '../lib/export'
 import { buildShareUrl } from '../lib/share'
+import { useToast } from '../lib/toast'
 import type { Theme } from '../lib/theme'
 
 export type ToolbarPanel = 'layout' | 'icons' | 'cheatsheet' | null
@@ -15,36 +15,45 @@ interface ToolbarProps {
   onTogglePanel: (panel: 'layout' | 'icons' | 'cheatsheet') => void
 }
 
-type Feedback = { label: string; key: number } | null
-
 export function Toolbar({ code, svg, theme, config, activePanel, onTogglePanel }: ToolbarProps) {
-  const [feedback, setFeedback] = useState<Feedback>(null)
-
-  function flash(label: string) {
-    setFeedback({ label, key: Date.now() })
-    setTimeout(() => setFeedback(null), 1500)
-  }
+  const { show } = useToast()
 
   async function handleCopyCode() {
-    await navigator.clipboard.writeText(code)
-    flash('Code copied')
+    try {
+      await navigator.clipboard.writeText(code)
+      show('Code copied')
+    } catch {
+      show('Failed to copy code', 'error')
+    }
   }
 
   async function handleCopyShareLink() {
-    await navigator.clipboard.writeText(buildShareUrl(code, theme, config))
-    flash('Link copied')
+    try {
+      await navigator.clipboard.writeText(buildShareUrl(code, theme, config))
+      show('Link copied')
+    } catch {
+      show('Failed to copy link', 'error')
+    }
   }
 
   async function handleExportSvg() {
     if (!svg) return
-    await exportSvg(svg)
-    flash('SVG exported')
+    try {
+      await exportSvg(svg)
+      show('SVG exported')
+    } catch {
+      show('Failed to export SVG', 'error')
+    }
   }
 
   async function handleExportPng() {
     if (!svg) return
-    await exportPng(svg)
-    flash('PNG exported')
+    try {
+      await exportPng(svg)
+      show('PNG exported')
+    } catch {
+      show('Failed to export PNG', 'error')
+    }
   }
 
   return (
@@ -68,13 +77,6 @@ export function Toolbar({ code, svg, theme, config, activePanel, onTogglePanel }
       >
         D2 docs ↗
       </a>
-      <span
-        className={`text-xs text-slate-500 transition-opacity duration-300 dark:text-slate-400 ${
-          feedback ? 'opacity-100' : 'opacity-0'
-        }`}
-      >
-        {feedback?.label}
-      </span>
     </div>
   )
 }

@@ -24,6 +24,7 @@ import { exportDocument, exportLibrary } from './lib/export'
 import { renderD2 } from './lib/renderD2'
 import { readDocIdFromUrl, readStateFromUrl, writeDocIdToUrl } from './lib/share'
 import { useTheme } from './lib/theme'
+import { useToast } from './lib/toast'
 import { useDebouncedValue } from './lib/useDebouncedValue'
 
 const initialUrlState = readStateFromUrl()
@@ -31,6 +32,7 @@ const SIDEBAR_OPEN_KEY = 'scw-d2:sidebar-open'
 
 function App() {
   const { theme, toggleTheme, setTheme } = useTheme()
+  const toast = useToast()
   const [documents, setDocuments] = useState<D2Document[]>([])
   const [currentDocId, setCurrentDocId] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
@@ -232,7 +234,7 @@ function App() {
       const last = imported.at(-1)
       if (last) openDocument(last)
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : 'Failed to import file')
+      toast.show(err instanceof Error ? err.message : 'Failed to import file', 'error')
     }
   }
 
