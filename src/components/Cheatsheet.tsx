@@ -1,3 +1,5 @@
+import { usePanelFocus } from '../lib/usePanelFocus'
+
 interface CheatsheetEntry {
   syntax: string
   description: string
@@ -21,10 +23,16 @@ interface CheatsheetProps {
 }
 
 export function Cheatsheet({ onClose }: CheatsheetProps) {
+  const { headingRef, onKeyDown } = usePanelFocus(onClose)
+
   return (
-    <div className="border-t border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
+    <div className="border-t border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900" onKeyDown={onKeyDown}>
       <div className="mb-2 flex items-center justify-between">
-        <h2 className="text-xs font-semibold tracking-wide text-slate-600 uppercase dark:text-slate-400">
+        <h2
+          ref={headingRef}
+          tabIndex={-1}
+          className="text-xs font-semibold tracking-wide text-slate-600 uppercase dark:text-slate-400"
+        >
           D2 cheatsheet
         </h2>
         <button

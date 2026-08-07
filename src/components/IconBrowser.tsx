@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { SCW_ICON_NAMES, scwIconUrl } from '../lib/scwIcons'
+import { usePanelFocus } from '../lib/usePanelFocus'
 
 interface IconBrowserProps {
   onClose: () => void
@@ -8,6 +9,7 @@ interface IconBrowserProps {
 export function IconBrowser({ onClose }: IconBrowserProps) {
   const [filter, setFilter] = useState('')
   const [copied, setCopied] = useState<string | null>(null)
+  const { headingRef, onKeyDown } = usePanelFocus(onClose)
 
   const names = SCW_ICON_NAMES.filter((name) => name.includes(filter.trim().toLowerCase()))
 
@@ -18,9 +20,13 @@ export function IconBrowser({ onClose }: IconBrowserProps) {
   }
 
   return (
-    <div className="border-t border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
+    <div className="border-t border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900" onKeyDown={onKeyDown}>
       <div className="mb-2 flex items-center justify-between gap-3">
-        <h2 className="text-xs font-semibold tracking-wide text-slate-600 uppercase dark:text-slate-400">
+        <h2
+          ref={headingRef}
+          tabIndex={-1}
+          className="text-xs font-semibold tracking-wide text-slate-600 uppercase dark:text-slate-400"
+        >
           Scaleway icons
         </h2>
         <div className="flex flex-1 items-center justify-end gap-3">

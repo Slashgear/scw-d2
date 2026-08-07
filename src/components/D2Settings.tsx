@@ -1,4 +1,5 @@
 import { DEFAULT_D2_CONFIG, type D2Config } from '../lib/d2Config'
+import { usePanelFocus } from '../lib/usePanelFocus'
 
 interface D2SettingsProps {
   config: D2Config
@@ -7,10 +8,16 @@ interface D2SettingsProps {
 }
 
 export function D2Settings({ config, onChange, onClose }: D2SettingsProps) {
+  const { headingRef, onKeyDown } = usePanelFocus(onClose)
+
   return (
-    <div className="border-t border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
+    <div className="border-t border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900" onKeyDown={onKeyDown}>
       <div className="mb-2 flex items-center justify-between">
-        <h2 className="text-xs font-semibold tracking-wide text-slate-600 uppercase dark:text-slate-400">
+        <h2
+          ref={headingRef}
+          tabIndex={-1}
+          className="text-xs font-semibold tracking-wide text-slate-600 uppercase dark:text-slate-400"
+        >
           Diagram layout
         </h2>
         <div className="flex items-center gap-3">
