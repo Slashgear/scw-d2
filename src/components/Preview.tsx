@@ -56,6 +56,14 @@ export function Preview({ svg, error }: PreviewProps) {
 
   return (
     <div className="relative flex h-full w-full flex-col bg-white dark:bg-[#151a2d]">
+      {/* Screen-reader-only: the debounced recompile in App.tsx has no other
+          visible-to-AT signal that it ran. Errors include their first line so a
+          second, *different* error still changes the announced text — a static
+          "Diagram error" wouldn't re-announce past the first one, since aria-live
+          only fires on an actual text change. */}
+      <div role="status" className="sr-only">
+        {error ? `Diagram error: ${error.split('\n')[0]}` : svg ? 'Diagram updated' : ''}
+      </div>
       <div
         ref={viewportRef}
         className="flex-1 cursor-grab overflow-hidden active:cursor-grabbing"
