@@ -159,6 +159,7 @@ export function Sidebar({
               {editingId === doc.id ? (
                 <input
                   autoFocus
+                  aria-label={`Rename ${doc.name}`}
                   value={draftName}
                   onChange={(e) => setDraftName(e.target.value)}
                   onBlur={commitRename}
@@ -166,7 +167,7 @@ export function Sidebar({
                     if (e.key === 'Enter') commitRename()
                     if (e.key === 'Escape') setEditingId(null)
                   }}
-                  className="min-w-0 flex-1 rounded border border-slate-300 bg-white px-1 py-0.5 text-xs text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  className="min-w-0 flex-1 rounded border border-slate-500 bg-white px-1 py-0.5 text-xs text-slate-800 dark:border-slate-500 dark:bg-slate-800 dark:text-slate-100"
                 />
               ) : (
                 <button
@@ -189,7 +190,7 @@ export function Sidebar({
                   onClick={() => startRename(doc)}
                   aria-label={`Rename ${doc.name}`}
                   title="Rename"
-                  className="text-[11px] text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[11px] text-slate-500 hover:bg-slate-200 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                 >
                   ✎
                 </button>
@@ -198,7 +199,7 @@ export function Sidebar({
                   onClick={() => onDuplicateDocument(doc.id)}
                   aria-label={`Duplicate ${doc.name}`}
                   title="Duplicate"
-                  className="text-[11px] text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[11px] text-slate-500 hover:bg-slate-200 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                 >
                   ⧉
                 </button>
@@ -207,7 +208,7 @@ export function Sidebar({
                   onClick={() => onExportDocument(doc.id)}
                   aria-label={`Export ${doc.name}`}
                   title="Export"
-                  className="text-[11px] text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[11px] text-slate-500 hover:bg-slate-200 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                 >
                   ⭳
                 </button>
@@ -216,7 +217,7 @@ export function Sidebar({
                   onClick={() => handleDelete(doc)}
                   aria-label={`Delete ${doc.name}`}
                   title="Delete"
-                  className="text-[11px] text-slate-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[11px] text-slate-500 hover:bg-slate-200 hover:text-red-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-red-400"
                 >
                   🗑
                 </button>

@@ -18,7 +18,7 @@ function PrivacyPolicy() {
         </p>
         <a
           href="./"
-          className="rounded-md border border-slate-300 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+          className="rounded-md border border-slate-500 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-slate-500 dark:text-slate-300 dark:hover:bg-slate-800"
         >
           ← Back to editor
         </a>

@@ -45,7 +45,7 @@ function AiAssistant() {
         </p>
         <a
           href="./"
-          className="rounded-md border border-slate-300 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+          className="rounded-md border border-slate-500 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-slate-500 dark:text-slate-300 dark:hover:bg-slate-800"
         >
           ← Back to editor
         </a>
@@ -78,7 +78,7 @@ function AiAssistant() {
           <button
             type="button"
             onClick={handleCopyPrompt}
-            className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+            className="rounded-md border border-slate-500 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-500 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
           >
             {promptCopied ? 'Copied!' : 'Copy prompt'}
           </button>
@@ -116,7 +116,7 @@ function AiAssistant() {
             onChange={(e) => setIconFilter(e.target.value)}
             placeholder="Filter…"
             aria-label="Filter icons"
-            className="w-40 rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+            className="w-40 rounded border border-slate-500 bg-white px-2 py-1 text-xs text-slate-800 dark:border-slate-500 dark:bg-slate-800 dark:text-slate-100"
           />
           <div className="grid grid-cols-4 gap-1 sm:grid-cols-6 md:grid-cols-8">
             {filteredIcons.map((name) => (
