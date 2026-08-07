@@ -69,7 +69,7 @@ export function ConfirmDialog({
       // Tailwind's Preflight resets margin to 0 on every element, which quietly
       // defeats the native <dialog> UA stylesheet's `margin: auto` centering —
       // restore it explicitly instead of the dialog opening pinned to the corner.
-      className="m-auto max-w-sm rounded-lg border border-slate-500 bg-white p-4 text-slate-900 shadow-2xl backdrop:bg-slate-950/50 dark:border-slate-500 dark:bg-slate-900 dark:text-slate-100 dark:backdrop:bg-black/70"
+      className="m-auto max-w-sm rounded-lg border border-slate-500 bg-white p-4 text-slate-900 shadow-2xl backdrop:bg-slate-950/50 dark:border-slate-400 dark:bg-slate-900 dark:text-slate-100 dark:backdrop:bg-black/70"
     >
       <h2 className="text-sm font-semibold">{title}</h2>
       <p className="mt-1.5 text-sm text-slate-600 dark:text-slate-300">{description}</p>
@@ -77,7 +77,7 @@ export function ConfirmDialog({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-md border border-slate-500 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-slate-500 dark:text-slate-300 dark:hover:bg-slate-800"
+          className="rounded-md border border-slate-500 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-slate-400 dark:text-slate-300 dark:hover:bg-slate-800"
         >
           {cancelLabel}
         </button>

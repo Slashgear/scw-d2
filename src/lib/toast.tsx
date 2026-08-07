@@ -38,7 +38,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             className={`pointer-events-auto rounded-md border px-3 py-1.5 text-xs font-medium shadow-lg ${
               t.variant === 'error'
                 ? 'border-red-300 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200'
-                : 'border-slate-500 bg-white text-slate-700 dark:border-slate-500 dark:bg-slate-800 dark:text-slate-200'
+                : 'border-slate-500 bg-white text-slate-700 dark:border-slate-400 dark:bg-slate-800 dark:text-slate-200'
             }`}
           >
             {t.message}

@@ -101,7 +101,7 @@ function ToolbarButton({
       className={`shrink-0 rounded-md border px-3 py-1.5 text-sm font-medium whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-40 ${
         active
           ? 'border-purple-300 bg-purple-100 text-purple-800 dark:border-purple-700 dark:bg-purple-900/50 dark:text-purple-200'
-          : 'border-slate-500 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-500 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
+          : 'border-slate-500 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-400 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
       }`}
     >
       {label}

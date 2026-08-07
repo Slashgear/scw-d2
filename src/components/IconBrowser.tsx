@@ -36,7 +36,7 @@ export function IconBrowser({ onClose }: IconBrowserProps) {
             onChange={(e) => setFilter(e.target.value)}
             placeholder="Filter…"
             aria-label="Filter icons"
-            className="w-40 rounded border border-slate-500 bg-white px-2 py-1 text-xs text-slate-800 dark:border-slate-500 dark:bg-slate-800 dark:text-slate-100"
+            className="w-40 rounded border border-slate-500 bg-white px-2 py-1 text-xs text-slate-800 dark:border-slate-400 dark:bg-slate-800 dark:text-slate-100"
           />
           <button
             type="button"

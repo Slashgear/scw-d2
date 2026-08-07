@@ -187,7 +187,7 @@ export function Sidebar({
                     if (e.key === 'Enter') commitRename()
                     if (e.key === 'Escape') setEditingId(null)
                   }}
-                  className="min-w-0 flex-1 rounded border border-slate-500 bg-white px-1 py-0.5 text-xs text-slate-800 dark:border-slate-500 dark:bg-slate-800 dark:text-slate-100"
+                  className="min-w-0 flex-1 rounded border border-slate-500 bg-white px-1 py-0.5 text-xs text-slate-800 dark:border-slate-400 dark:bg-slate-800 dark:text-slate-100"
                 />
               ) : (
                 <button

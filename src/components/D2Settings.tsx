@@ -47,7 +47,7 @@ export function D2Settings({ config, onChange, onClose }: D2SettingsProps) {
           <select
             value={config.layout}
             onChange={(e) => onChange({ ...config, layout: e.target.value as D2Config['layout'] })}
-            className="rounded border border-slate-500 bg-white px-1.5 py-1 text-slate-800 dark:border-slate-500 dark:bg-slate-800 dark:text-slate-100"
+            className="rounded border border-slate-500 bg-white px-1.5 py-1 text-slate-800 dark:border-slate-400 dark:bg-slate-800 dark:text-slate-100"
           >
             <option value="dagre">dagre</option>
             <option value="elk">elk</option>
