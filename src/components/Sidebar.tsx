@@ -99,7 +99,7 @@ export function Sidebar({
   }
 
   return (
-    <div className="flex w-64 shrink-0 flex-col border-r border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900">
+    <div className="fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col border-r border-slate-200 bg-slate-50 shadow-2xl lg:static lg:z-auto lg:shadow-none dark:border-slate-800 dark:bg-slate-900">
       <div className="flex items-center justify-between gap-1 border-b border-slate-200 px-2 py-2 dark:border-slate-800">
         <button
           type="button"

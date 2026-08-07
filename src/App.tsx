@@ -59,6 +59,20 @@ function App() {
     localStorage.setItem(SIDEBAR_OPEN_KEY, sidebarOpen ? '1' : '0')
   }, [sidebarOpen])
 
+  // Escape closes the mobile drawer (see the backdrop in the JSX below). Scoped
+  // to the same `max-width: 1023px` cutoff as the drawer itself — at `lg`+ the
+  // sidebar is a normal in-flow column that Escape shouldn't collapse (that would
+  // also fire while cancelling an in-sidebar rename with Escape, which is its own
+  // unrelated behavior — see Sidebar.tsx's rename input).
+  useEffect(() => {
+    if (!sidebarOpen) return
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape' && window.matchMedia('(max-width: 1023px)').matches) setSidebarOpen(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [sidebarOpen])
+
   function openDocument(doc: D2Document) {
     setCurrentDocId(doc.id)
     setCode(doc.code)
@@ -239,14 +253,14 @@ function App() {
       >
         Skip to editor
       </a>
-      <header className="flex items-center justify-between border-b border-slate-200 px-4 py-2 dark:border-slate-800">
+      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-2 dark:border-slate-800">
         <h1 className="flex items-center gap-2 text-sm font-semibold tracking-wide text-slate-700 dark:text-slate-200">
           Scaleway D2 Diagram Editor
           <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-semibold tracking-wider text-purple-700 uppercase dark:bg-purple-900/50 dark:text-purple-300">
             Beta
           </span>
         </h1>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <select
             aria-label="Diagram theme"
             value={config.diagramTheme}
@@ -307,14 +321,30 @@ function App() {
         </div>
       </header>
 
-      <main id="main" tabIndex={-1} className="flex min-h-0 flex-1">
+      <main id="main" tabIndex={-1} className="flex min-h-0 flex-1 flex-col lg:flex-row">
+        {currentDocId && sidebarOpen && (
+          // Below `lg` the sidebar is an off-canvas drawer (fixed + backdrop) so it
+          // doesn't squeeze the editor/preview panes into an unusable sliver; at
+          // `lg` and up it's back to being a normal in-flow column (see Sidebar.tsx).
+          <div
+            className="fixed inset-0 z-30 bg-slate-950/50 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+            aria-hidden="true"
+          />
+        )}
         {currentDocId && (
           <Sidebar
             open={sidebarOpen}
             onToggleOpen={() => setSidebarOpen((prev) => !prev)}
             documents={documents}
             currentDocId={currentDocId}
-            onSelectDocument={handleSelectDocument}
+            onSelectDocument={(id) => {
+              handleSelectDocument(id)
+              // Below `lg` the sidebar is a drawer covering the editor (see the
+              // backdrop above) — close it after picking a doc. At `lg`+ it's an
+              // in-flow column users expect to stay open while browsing.
+              if (window.matchMedia('(max-width: 1023px)').matches) setSidebarOpen(false)
+            }}
             onCreateDocument={handleCreateDocument}
             onDuplicateDocument={handleDuplicateDocument}
             onRenameDocument={handleRenameDocument}
@@ -326,7 +356,7 @@ function App() {
           />
         )}
 
-        <div className="flex min-h-0 flex-1 flex-col border-r border-slate-200 dark:border-slate-800">
+        <div className="flex min-h-0 flex-1 flex-col border-b border-slate-200 lg:border-r lg:border-b-0 dark:border-slate-800">
           <div className="min-h-0 flex-1 overflow-hidden">
             <Editor value={code} onChange={setCode} />
           </div>
