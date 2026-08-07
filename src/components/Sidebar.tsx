@@ -184,7 +184,7 @@ export function Sidebar({
                   {doc.name}
                 </button>
               )}
-              <div className="hidden shrink-0 items-center gap-0.5 group-hover:flex">
+              <div className="hidden shrink-0 items-center gap-0.5 group-hover:flex group-focus-within:flex">
                 <button
                   type="button"
                   onClick={() => startRename(doc)}

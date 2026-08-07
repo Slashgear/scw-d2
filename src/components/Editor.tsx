@@ -4,21 +4,25 @@ import { EditorView } from '@codemirror/view'
 import CodeMirror from '@uiw/react-codemirror'
 import { useMemo } from 'react'
 import { d2Language } from '../lib/d2Language'
-import { useTheme } from '../lib/theme'
+import { useTheme, type Theme } from '../lib/theme'
 
 interface EditorProps {
   value: string
   onChange: (value: string) => void
 }
 
-const fontTheme = EditorView.baseTheme({
-  '&': { fontSize: '13px', height: '100%' },
-  '.cm-content': { fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace' },
-  '.cm-gutters': { backgroundColor: 'transparent', border: 'none' },
-  // oneDark's default gutter color (#7d8799 on #282c34) is ~3.86:1, short of the
-  // 4.5:1 required for text. Brighten it enough to clear that threshold.
-  '.cm-gutterElement': { color: '#9aa1ad !important' },
-})
+function fontTheme(theme: Theme) {
+  return EditorView.baseTheme({
+    '&': { fontSize: '13px', height: '100%' },
+    '.cm-content': { fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace' },
+    '.cm-gutters': { backgroundColor: 'transparent', border: 'none' },
+    // oneDark's default gutter color (#7d8799 on #282c34) is ~3.86:1, short of the
+    // 4.5:1 required for text — and CodeMirror's default *light* gutter color isn't
+    // guaranteed to clear it either, so pick an explicit color per theme instead of
+    // one hardcoded value that only happens to work against one of the two backgrounds.
+    '.cm-gutterElement': { color: theme === 'dark' ? '#9aa1ad !important' : '#64748b !important' },
+  })
+}
 
 export function Editor({ value, onChange }: EditorProps) {
   const { theme } = useTheme()
@@ -27,13 +31,13 @@ export function Editor({ value, onChange }: EditorProps) {
     () => [
       d2Language,
       EditorView.lineWrapping,
-      fontTheme,
+      fontTheme(theme),
       syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
       // aria-label on <CodeMirror> only reaches the outer wrapper div; the
       // actual role="textbox" element is .cm-content, which needs its own name.
       EditorView.contentAttributes.of({ 'aria-label': 'D2 diagram source' }),
     ],
-    [],
+    [theme],
   )
 
   return (
